@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:14
+    container_name: db
+    ports:
+      - "5432:5432"
+    networks:
+      - net
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=codes
+  app:
+    build:
+      context: ./app/
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+      - go-cache:/go
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - db
+    networks:
+      - net
+    environment:
+      - TZ=Europe/Paris
+      - DB_HOST=db
+      - DB_USER=user
+      - DB_PASS=password
+      - DB_NAME=codes
+      - DB_PORT=5432
+networks:
+  net:
+
+volumes:
+  db-data:
+  go-cache:
