@@ -26,7 +26,7 @@ services:
       - TZ=Europe/Paris
       - VALKEY_HOST=storage
       - VALKEY_PORT=6379
-      - BASE_URL=http://0.0.0.0:8080
+      - BASE_URL=http://127.0.0.1:8080
 networks:
   valkey:
     driver: bridge
