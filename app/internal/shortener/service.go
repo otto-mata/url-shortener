@@ -36,6 +36,9 @@ func (s *Service) Shorten(_ *http.Request, url, preferredCode string) (string, e
 	}
 	code := generateCode(6)
 	if preferredCode != "" {
+		if !validatePreferredCode(preferredCode) {
+			return "", errors.New("invalid character(s) in preferred code")
+		}
 		code = preferredCode
 	}
 	for s.Match(code) {
@@ -69,4 +72,10 @@ func generateCode(n int) string {
 		code = code[:n]
 	}
 	return code
+}
+
+func validatePreferredCode(code string) bool {
+	return !strings.ContainsFunc(code, func(r rune) bool {
+		return (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9')
+	})
 }
