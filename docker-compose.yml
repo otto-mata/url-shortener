@@ -1,17 +1,13 @@
 services:
-  db:
-    image: postgres:14
-    container_name: db
+  storage:
+    image: valkey:9.0.1
+    container_name: storage
     ports:
-      - "5432:5432"
+      - "6379:6379"
     networks:
-      - net
+      - valkey
     volumes:
-      - db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=codes
+      - storage-data:/var/lib/postgresql/data
   app:
     build:
       context: ./app/
@@ -23,19 +19,18 @@ services:
       - go-cache:/go
       - /etc/localtime:/etc/localtime:ro
     depends_on:
-      - db
+      - storage
     networks:
-      - net
+      - valkey
     environment:
       - TZ=Europe/Paris
-      - DB_HOST=db
-      - DB_USER=user
-      - DB_PASS=password
-      - DB_NAME=codes
-      - DB_PORT=5432
+      - VALKEY_HOST=storage
+      - VALKEY_PORT=6379
+      - BASE_URL=http://0.0.0.0:8080
 networks:
-  net:
+  valkey:
+    driver: bridge
 
 volumes:
-  db-data:
+  storage-data:
   go-cache:

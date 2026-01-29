@@ -11,36 +11,37 @@ import (
 )
 
 // Service provides URL shortening logic
- type Service struct {
+type Service struct {
 	baseURL string
 	store   storage.Store
- }
+}
 
- func NewService(baseURL string, store storage.Store) *Service {
+func NewService(baseURL string, store storage.Store) *Service {
 	return &Service{baseURL: strings.TrimRight(baseURL, "/"), store: store}
- }
+}
 
- // Shorten creates a short code for the given URL and stores the mapping
- func (s *Service) Shorten(_ *http.Request, url string) (string, error) {
+// Shorten creates a short code for the given URL and stores the mapping
+func (s *Service) Shorten(_ *http.Request, url string) (string, error) {
 	if url == "" {
 		return "", errors.New("empty url")
 	}
 	code := generateCode(6)
-	if err := s.store.Save(code, url); err != nil {
+	if _, err := s.store.Save(code, url); err != nil {
 		return "", err
 	}
 	return code, nil
- }
+}
 
- // Resolve returns the original URL for the given code
- func (s *Service) Resolve(_ *http.Request, code string) (string, error) {
-	if url, ok := s.store.Get(code); ok {
-		return url, nil
+// Resolve returns the original URL for the given code
+func (s *Service) Resolve(_ *http.Request, code string) (string, error) {
+	url, err := s.store.Get(code)
+	if err != nil {
+		return "", errors.New("not found")
 	}
-	return "", errors.New("not found")
- }
+	return url, nil
+}
 
- func generateCode(n int) string {
+func generateCode(n int) string {
 	b := make([]byte, n)
 	_, _ = rand.Read(b)
 	// URL-safe base64, remove non-alphanum for simplicity
@@ -49,4 +50,4 @@ import (
 		code = code[:n]
 	}
 	return code
- }
+}

@@ -11,16 +11,16 @@ import (
 
 	"url-shortener/internal/config"
 	apphttp "url-shortener/internal/http"
-	"url-shortener/internal/storage/pg"
+	"url-shortener/internal/storage/valkey"
 )
 
 func main() {
 	cfg := config.Load()
 
 	// Setup dependencies
-	store, err := pg.NewPostgresStore(&cfg)
+	store, err := valkey.NewValkeyStore(&cfg)
 	if err != nil {
-		log.Fatalf("Postgres Store failed to initialize: %v", err)
+		log.Fatalf("Valkey Store failed to initialize: %v", err)
 	}
 	r := apphttp.NewRouter(cfg, store)
 

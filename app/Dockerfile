@@ -1,5 +1,5 @@
 # Use the official Golang image as the base
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25.6-alpine AS builder
 
 # Set environment variables
 ENV CGO_ENABLED=0 \
@@ -22,7 +22,7 @@ COPY . .
 RUN go build -o /app ./cmd/server
 
 # Final lightweight stage
-FROM alpine:3.21 AS final
+FROM alpine:3.22 AS final
 
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app /bin/app
