@@ -3,6 +3,7 @@ package shortener
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -15,6 +16,11 @@ import (
 type Service struct {
 	baseURL string
 	store   storage.Store
+}
+
+type linkStats struct {
+	Code   string `json:"code"`
+	Target string `json:"target_url"`
 }
 
 func NewService(baseURL string, store storage.Store) *Service {
@@ -61,6 +67,22 @@ func (s *Service) Resolve(_ *http.Request, code string) (string, error) {
 		return "", errors.New("not found")
 	}
 	return url, nil
+}
+
+func (s *Service) Stats(_ *http.Request, code string) (string, error) {
+	url, err := s.store.Get(code)
+	if err != nil {
+		return "", errors.New("not found")
+	}
+	stats := linkStats{
+		Code:   code,
+		Target: url,
+	}
+	rep, err := json.Marshal(stats)
+	if err != nil {
+		return "", errors.New("not found")
+	}
+	return string(rep), nil
 }
 
 func generateCode(n int) string {

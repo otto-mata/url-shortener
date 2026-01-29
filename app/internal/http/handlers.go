@@ -16,6 +16,7 @@ type Handler struct {
 type Shortener interface {
 	Shorten(r *http.Request, url, preferredCode string) (string, error)
 	Resolve(r *http.Request, code string) (string, error)
+	Stats(r *http.Request, code string) (string, error)
 }
 
 func NewHandler(svc Shortener) *Handler {
@@ -58,6 +59,17 @@ func (h *Handler) Resolve(w http.ResponseWriter, r *http.Request) {
 	code := chi.URLParam(r, "code")
 	if code == "" {
 		http.NotFound(w, r)
+		return
+	}
+	if code[len(code)-1] == '+' {
+		stats, err := h.Svc.Stats(r, code[:len(code)-1])
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.Write([]byte(stats))
 		return
 	}
 	url, err := h.Svc.Resolve(r, code)
