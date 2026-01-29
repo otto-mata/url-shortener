@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -20,12 +21,30 @@ func NewService(baseURL string, store storage.Store) *Service {
 	return &Service{baseURL: strings.TrimRight(baseURL, "/"), store: store}
 }
 
+func (s *Service) Match(code string) bool {
+	url, err := s.store.Get(code)
+	if url == "" || err != nil {
+		return false
+	}
+	return true
+}
+
 // Shorten creates a short code for the given URL and stores the mapping
-func (s *Service) Shorten(_ *http.Request, url string) (string, error) {
+func (s *Service) Shorten(_ *http.Request, url, preferredCode string) (string, error) {
 	if url == "" {
 		return "", errors.New("empty url")
 	}
 	code := generateCode(6)
+	if preferredCode != "" {
+		code = preferredCode
+	}
+	for s.Match(code) {
+		if preferredCode != "" {
+			return "", errors.New("preferred code is already taken")
+		}
+		log.Printf("WARNING collision for code %s\n", code)
+		code = generateCode(6)
+	}
 	if _, err := s.store.Save(code, url); err != nil {
 		return "", err
 	}
