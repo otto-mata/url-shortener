@@ -8,37 +8,42 @@ import (
 )
 
 // Handler groups HTTP handlers
- type Handler struct {
+type Handler struct {
 	Svc Shortener
- }
+}
 
- // Shortener defines the operations needed from the shortener service
- type Shortener interface {
-	Shorten(r *http.Request, url string) (string, error)
+// Shortener defines the operations needed from the shortener service
+type Shortener interface {
+	Shorten(r *http.Request, url, preferredCode string) (string, error)
 	Resolve(r *http.Request, code string) (string, error)
- }
+}
 
 func NewHandler(svc Shortener) *Handler {
 	return &Handler{Svc: svc}
 }
 
- type shortenRequest struct {
-	URL string `json:"url"`
- }
+type shortenRequest struct {
+	URL           string  `json:"url"`
+	PreferredCode *string `json:"preferred_code"`
+}
 
- type shortenResponse struct {
-	Code string `json:"code"`
+type shortenResponse struct {
+	Code     string `json:"code"`
 	ShortURL string `json:"short_url"`
- }
+}
 
- // Shorten handles POST /api/shorten
- func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
+// Shorten handles POST /api/shorten
+func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
 	var req shortenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.URL == "" {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	code, err := h.Svc.Shorten(r, req.URL)
+	preferredCode := ""
+	if req.PreferredCode != nil {
+		preferredCode = *req.PreferredCode
+	}
+	code, err := h.Svc.Shorten(r, req.URL, preferredCode)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -46,10 +51,10 @@ func NewHandler(svc Shortener) *Handler {
 	res := shortenResponse{Code: code, ShortURL: r.Host + "/" + code}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
- }
+}
 
- // Resolve handles GET /{code}
- func (h *Handler) Resolve(w http.ResponseWriter, r *http.Request) {
+// Resolve handles GET /{code}
+func (h *Handler) Resolve(w http.ResponseWriter, r *http.Request) {
 	code := chi.URLParam(r, "code")
 	if code == "" {
 		http.NotFound(w, r)
@@ -61,4 +66,4 @@ func NewHandler(svc Shortener) *Handler {
 		return
 	}
 	http.Redirect(w, r, url, http.StatusFound)
- }
+}
