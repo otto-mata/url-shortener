@@ -1,6 +1,6 @@
 services:
   storage:
-    image: valkey:9.0.1
+    image: valkey/valkey:9.0.1
     container_name: storage
     ports:
       - "6379:6379"
